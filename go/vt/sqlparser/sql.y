@@ -1332,6 +1332,10 @@ constraint_info:
   {
     $$ = &ForeignKeyDefinition{Source: $4, ReferencedTable: $7, ReferencedColumns: $9, OnDelete: $11, OnUpdate: $12}
   }
+| CHECK '(' expression ')'
+  {
+    $$ = &CheckConstraintDefinition{Expr: $3, Enforced: true}
+  }
 
 fk_on_delete:
   ON DELETE fk_reference_action

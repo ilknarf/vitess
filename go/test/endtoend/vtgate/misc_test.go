@@ -133,6 +133,20 @@ func TestUnion(t *testing.T) {
 	assertMatches(t, conn, `(SELECT 1,'a' order by 1) union (SELECT 1,'a' ORDER BY 1)`, `[[INT64(1) VARCHAR("a")]]`)
 }
 
+func TestCheckConstraint(t *testing.T) {
+	conn, err := mysql.Connect(context.Background(), &vtParams)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	query := `CREATE TABLE t1 (CHECK (c1 <> c2), c1 INT CHECK (c1 > 10), c2 INT CONSTRAINT c2_positive CHECK (c2 > 0), c3 INT CHECK (c3 < 100), CONSTRAINT c1_nonzero CHECK (c1 <> 0), CHECK (c1 > c3));`
+	exec(t, conn, query)
+
+	checkQuery := `SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = 't1';`
+	expected := `[[VARCHAR()] [VARCHAR()] [VARCHAR()] [VARCHAR()]]`
+
+	assertMatches(t, conn, checkQuery, expected)
+}
+
 func TestSavepointInTx(t *testing.T) {
 	defer cluster.PanicHandler(t)
 	ctx := context.Background()
