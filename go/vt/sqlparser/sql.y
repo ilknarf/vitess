@@ -307,7 +307,7 @@ func skipToEnd(yylex interface{}) {
 %type <OnlineDDLHint> online_hint_opt
 %type <str> full_opt from_database_opt tables_or_processlist columns_or_fields extended_opt
 %type <showFilter> like_or_where_opt like_opt
-%type <boolean> exists_opt not_exists_opt null_opt
+%type <boolean> exists_opt not_exists_opt null_opt enforced_opt
 %type <empty> non_add_drop_or_rename_operation to_opt index_opt constraint_opt
 %type <bytes> reserved_keyword non_reserved_keyword
 %type <colIdent> sql_id reserved_sql_id col_alias as_ci_opt using_opt
@@ -1332,9 +1332,9 @@ constraint_info:
   {
     $$ = &ForeignKeyDefinition{Source: $4, ReferencedTable: $7, ReferencedColumns: $9, OnDelete: $11, OnUpdate: $12}
   }
-| CHECK '(' expression ')'
+| CHECK '(' expression ')' enforced_opt
   {
-    $$ = &CheckConstraintDefinition{Expr: $3, Enforced: true}
+    $$ = &CheckConstraintDefinition{Expr: $3, Enforced: $5}
   }
 
 fk_on_delete:
@@ -1369,6 +1369,19 @@ fk_reference_action:
 | SET NULL
   {
     $$ = SetNull
+  }
+
+enforced_opt:
+  {
+    $$ = true
+  }
+  ENFORCED
+  {
+    $$ = true
+  }
+  NOT ENFORCED
+  {
+    $$ = false
   }
 
 table_option_list:
